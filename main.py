@@ -23,5 +23,3 @@ app = FastAPI(
 
 # Register Routes
 app.include_router(account_router)
-
-print(settings.DATABASE_URL, "DATABASE_URL", settings.model_dump_json())
