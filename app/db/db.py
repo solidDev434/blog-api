@@ -19,14 +19,3 @@ AsyncSessionLocal = async_sessionmaker(
 async def init_db():
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
-
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async_session = sessionmaker(
-        bind=async_engine,
-        expire_on_commit=False,
-        class_=AsyncSession
-    )
-
-    async with async_session() as session:
-        yield session
