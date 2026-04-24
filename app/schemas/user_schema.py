@@ -19,9 +19,16 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
+    role: UserRole = Field(default=UserRole.READER, example="reader")
+
+
+class UserCreateWithoutHash(UserCreate):
     password: str = Field(..., min_length=8, max_length=128,
                           example="SuperSecret123:")
-    role: UserRole = Field(default=UserRole.READER, example="author")
+
+
+class UserCreateWithHash(UserCreate):
+    hashed_password: str = Field(...)
 
 
 class UserRead(UserBase):

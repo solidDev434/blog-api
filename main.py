@@ -2,9 +2,6 @@ from fastapi import FastAPI
 from app.routers.account import router as account_router
 from contextlib import asynccontextmanager
 from app.db.db import init_db
-import secrets
-
-print(secrets.token_hex(16))
 
 
 @asynccontextmanager

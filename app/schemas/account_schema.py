@@ -1,8 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, field_validator
 
 from .user_schema import (
-    UserRead,
-    UserCreate,
+    UserCreateWithoutHash,
     UserRole
 )
 
@@ -13,12 +12,7 @@ class Token(BaseModel):
     token_type: str
 
 
-class SignupDto(BaseModel):
-    email: EmailStr
-    role: UserRole = Field(..., examples=[UserRole.READER])
-    username: str = Field(..., min_length=5)
-    password: str = Field(..., min_length=8,
-                          description="Password must be at least 8 characters long")
+class SignupDto(UserCreateWithoutHash):
 
     @field_validator("role")
     def validate_role(cls, v):
