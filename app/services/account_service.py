@@ -4,6 +4,10 @@ from app.schemas.user_schema import (
     UserCreateWithoutHash,
     UserCreateWithHash
 )
+from app.schemas.account_schema import (
+    VerifyEmail,
+    ResendVerificationMail
+)
 from app.services.user_service import (
     create_user,
     get_user_by_email,
@@ -12,7 +16,9 @@ from app.services.user_service import (
 )
 from app.core.security import (
     verify_password,
+    verify_token,
     hash_password,
+    create_temporary_token,
     create_access_token,
     create_refresh_token
 )
@@ -47,6 +53,12 @@ async def register_user(db: AsyncSession, payload: UserCreateWithoutHash):
         hashed_password=hashed_password,
     )
 
+    # Create email verification token
+    token = create_temporary_token(data={"email": payload.email}, minutes=7)
+    print(f"Temporary Token {token}")
+    # Send mail
+    # https://domain.com/verify-email?token={token}
+
     # Create new user
     return await create_user(db, new_user_payload)
 
@@ -55,8 +67,25 @@ def login_user():
     """Verifies if user account is active before returning authentication tokens"""
 
 
-def verify_email():
+async def verify_user(db: AsyncSession, payload: VerifyEmail):
     """Verifies user email"""
+
+    payload = verify_token(payload.token)
+    print(payload)
+
+
+async def resend_mail(db: AsyncSession, payload: ResendVerificationMail):
+    """Resends verification mail to user"""
+    user = await get_user_by_email(db, payload.email)
+
+    if user == None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid credentail"
+        )
+
+    token = create_temporary_token(data={"email": payload.email}, minutes=7)
+    print(token)
 
 
 def forgot_password():

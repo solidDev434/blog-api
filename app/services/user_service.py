@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlmodel import select, or_
+from sqlmodel import select, or_, update
 from app.models.user_model import User
 from app.schemas.user_schema import (
     UserCreateWithHash,
@@ -16,7 +16,6 @@ async def create_user(db: AsyncSession, payload: UserCreateWithHash):
         hashed_password=payload.hashed_password,
         is_active=False
     )
-    print(f"User Data {user}")
 
     # Add new user
     try:
@@ -46,3 +45,27 @@ async def get_user_by_email_or_username(db: AsyncSession, email: str, username: 
         or_(User.email == email, User.username == username))
     result = await db.execute(statement)
     return result.scalar_one_or_none()
+
+
+async def activate_user(db: AsyncSession, user_id: int):
+    # statement = select(User).where(User.id == user_id)
+    # user = (await db.execute(statement)).scalar_one_or_none()
+
+    # if user:
+    #     user.is_active = True
+    #     user.updated_at = datetime.now()
+
+    #     db.commit()
+    #     db.refresh(user)
+    #     return user
+
+    statement = (update(User).where(User.id == user_id).values(is_active=True))
+    await db.execute(statement)
+    await db.commit()
+
+
+async def deactivate_user(db: AsyncSession, user_id: int):
+    statement = (update(User).where(
+        User.id == user_id).values(is_active=False))
+    await db.execute(statement)
+    await db.commit()

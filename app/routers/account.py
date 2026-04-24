@@ -4,7 +4,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.schemas.user_schema import UserCreateWithoutHash
 from app.services.account_service import (
-    register_user
+    register_user,
+    verify_user,
+    resend_mail
+)
+from app.schemas.account_schema import (
+    VerifyEmail,
+    ResendVerificationMail
 )
 from app.db.dependencies import get_db
 
@@ -21,14 +27,42 @@ async def create_new_user(payload: UserCreateWithoutHash, db: AsyncSession = Dep
     except HTTPException as e:
         raise e
 
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this email or username already exists"
-        )
-
     except Exception as e:
         logger.error(f"Signup error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.post("/verify-email", status_code=status.HTTP_200_OK)
+async def verify_email(payload: VerifyEmail, db: AsyncSession = Depends(get_db)):
+    try:
+        await verify_user(db, payload)
+        return {"message": "Email successfully verified"}
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+        logger.error(f"Email Verification error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.post("/resend-verification-mail", status_code=status.HTTP_200_OK)
+async def resend_verification_mail(payload: ResendVerificationMail, db: AsyncSession = Depends(get_db)):
+    try:
+        await resend_mail(db, payload)
+        return {"message": "Email successfully sent"}
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+        logger.error(f"Failed Email Resend error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred"
