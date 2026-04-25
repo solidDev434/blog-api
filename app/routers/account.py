@@ -5,10 +5,12 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.schemas.user_schema import UserCreateWithoutHash
 from app.services.account_service import (
     register_user,
-    verify_user,
+    login_user,
+    verify_user_mail,
     resend_mail
 )
 from app.schemas.account_schema import (
+    LoginUser,
     VerifyEmail,
     ResendVerificationMail
 )
@@ -35,10 +37,26 @@ async def create_new_user(payload: UserCreateWithoutHash, db: AsyncSession = Dep
         )
 
 
+@router.post("/login", status_code=status.HTTP_200_OK)
+async def create_new_user(payload: LoginUser, db: AsyncSession = Depends(get_db)):
+    try:
+        return await login_user(db, payload)
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
 @router.post("/verify-email", status_code=status.HTTP_200_OK)
 async def verify_email(payload: VerifyEmail, db: AsyncSession = Depends(get_db)):
     try:
-        await verify_user(db, payload)
+        await verify_user_mail(db, payload)
         return {"message": "Email successfully verified"}
 
     except HTTPException as e:

@@ -1,4 +1,5 @@
 import jwt
+import time
 from datetime import timedelta, datetime, timezone
 from pwdlib import PasswordHash
 
@@ -54,13 +55,17 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
     delta = expires_delta or timedelta(days=7)
-    return _generate_token(data, delta, settings.JWT_SECRET_KEY)
+    return _generate_token(data, delta, settings.JWT_REFRESH_KEY)
 
 
 def verify_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY)
+            token, settings.JWT_SECRET_KEY, algorithms=[algorithm])
+
+        if round(time.time()) > payload["exp"]:
+            raise TokenExpiredError("Token has expired")
+
         return payload
 
     except jwt.ExpiredSignatureError:

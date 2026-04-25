@@ -48,17 +48,6 @@ async def get_user_by_email_or_username(db: AsyncSession, email: str, username: 
 
 
 async def activate_user(db: AsyncSession, user_id: int):
-    # statement = select(User).where(User.id == user_id)
-    # user = (await db.execute(statement)).scalar_one_or_none()
-
-    # if user:
-    #     user.is_active = True
-    #     user.updated_at = datetime.now()
-
-    #     db.commit()
-    #     db.refresh(user)
-    #     return user
-
     statement = (update(User).where(User.id == user_id).values(is_active=True))
     await db.execute(statement)
     await db.commit()
