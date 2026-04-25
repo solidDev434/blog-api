@@ -8,14 +8,17 @@ from app.schemas.account_schema import (
     Token,
     LoginUser,
     VerifyEmail,
-    ResendVerificationMail
+    ResendVerificationMail,
+    ForgotPassword,
+    ResetPassword
 )
 from app.services.user_service import (
     create_user,
     get_user_by_email,
     get_user_by_username,
     get_user_by_email_or_username,
-    activate_user
+    activate_user,
+    update_user_password
 )
 from app.core.security import (
     verify_password,
@@ -27,7 +30,7 @@ from app.core.security import (
 )
 
 
-async def verify_user(db: AsyncSession, email: str):
+async def verify_and_check_user_is_inactive(db: AsyncSession, email: str):
     user = await get_user_by_email(db, email)
 
     if user == None:
@@ -40,6 +43,24 @@ async def verify_user(db: AsyncSession, email: str):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User account is already verified"
+        )
+
+    return user
+
+
+async def verify_if_user_exists_and_is_active(db: AsyncSession, email: str):
+    user = await get_user_by_email(db, email)
+
+    if user == None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentail"
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User account isn't activated"
         )
 
     return user
@@ -86,20 +107,7 @@ async def register_user(db: AsyncSession, payload: UserCreateWithoutHash):
 
 async def login_user(db: AsyncSession, payload: LoginUser):
     """Verifies if user account is active before returning authentication tokens"""
-    print(payload)
-    user = await get_user_by_email(db, payload.email)
-
-    if user == None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentail"
-        )
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User account isn't activated"
-        )
+    user = await verify_if_user_exists_and_is_active(db, payload.email)
 
     # Verify user password
     password_is_valid = verify_password(payload.password, user.hashed_password)
@@ -123,8 +131,8 @@ async def login_user(db: AsyncSession, payload: LoginUser):
 
 async def verify_user_mail(db: AsyncSession, payload: VerifyEmail):
     """Verifies user email"""
-    payload = verify_token(payload.token)
-    user = await verify_user(db, payload["email"])
+    token_payload = verify_token(payload.token)
+    user = await verify_and_check_user_is_inactive(db, token_payload["email"])
 
     # Activate user account
     await activate_user(db, user.id)
@@ -132,15 +140,43 @@ async def verify_user_mail(db: AsyncSession, payload: VerifyEmail):
 
 async def resend_mail(db: AsyncSession, payload: ResendVerificationMail):
     """Resends verification mail to user"""
-    await verify_user(db, payload.email)
+    await verify_and_check_user_is_inactive(db, payload.email)
 
     token = create_temporary_token(data={"email": payload.email}, minutes=7)
     print(token)
 
 
-def forgot_password():
+async def forgot_password(db: AsyncSession, payload: ForgotPassword):
     """Checks if user exists and proceeds to send unique passowrd verification link"""
+    user = await get_user_by_email(db, payload.email)
+
+    if user == None:
+        raise HTTPException(
+            status_code=status.HTTP_202_ACCEPTED
+        )
+
+    token = create_temporary_token(data={"email": payload.email}, minutes=5)
+    print(f"Temporary Token {token}")
+
+    return token
 
 
-def reset_password():
+async def reset_password(db: AsyncSession, payload: ResetPassword):
     """Updates user password"""
+    token_payload = verify_token(payload.token)
+    user = await verify_if_user_exists_and_is_active(db, token_payload["email"])
+
+    # Check if password is similar
+    verify_new_password = verify_password(
+        payload.new_password, user.hashed_password)
+    if verify_new_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Password can't be the same, use something else"
+        )
+
+    # Hash password
+    hashed_password = hash_password(payload.new_password)
+
+    # Update user
+    await update_user_password(db, user.id, hashed_password)

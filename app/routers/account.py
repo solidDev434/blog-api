@@ -7,12 +7,16 @@ from app.services.account_service import (
     register_user,
     login_user,
     verify_user_mail,
-    resend_mail
+    resend_mail,
+    forgot_password,
+    reset_password,
 )
 from app.schemas.account_schema import (
     LoginUser,
     VerifyEmail,
-    ResendVerificationMail
+    ResendVerificationMail,
+    ForgotPassword,
+    ResetPassword
 )
 from app.db.dependencies import get_db
 
@@ -81,6 +85,42 @@ async def resend_verification_mail(payload: ResendVerificationMail, db: AsyncSes
 
     except Exception as e:
         logger.error(f"Failed Email Resend error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+async def request_reset_password(payload: ForgotPassword, db: AsyncSession = Depends(get_db)):
+    try:
+        token = await forgot_password(db, payload)
+        return {"message": "If an account exists with the email, a reset link has been sent.", "token": token}
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+        logger.error(
+            f"Failed Reset Password Request error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+async def reset_user_password(payload: ResetPassword, db: AsyncSession = Depends(get_db)):
+    try:
+        await reset_password(db, payload)
+        return {"message": "Reset Password successful"}
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+        logger.error(
+            f"Failed Reset Password Request error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred"

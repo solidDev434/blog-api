@@ -58,3 +58,10 @@ async def deactivate_user(db: AsyncSession, user_id: int):
         User.id == user_id).values(is_active=False))
     await db.execute(statement)
     await db.commit()
+
+
+async def update_user_password(db: AsyncSession, user_id: int, new_hashed_password: str):
+    statement = (update(User).where(
+        User.id == user_id).values(hashed_password=new_hashed_password))
+    await db.execute(statement)
+    await db.commit()
