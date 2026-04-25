@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from datetime import datetime
 from enum import Enum
 
@@ -19,9 +19,39 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
+    role: UserRole = Field(default=UserRole.READER, example="reader")
+
+
+class UserCreateWithoutHash(UserCreate):
     password: str = Field(..., min_length=8, max_length=128,
-                          example="SuperSecret123:")
-    role: UserRole = Field(default=UserRole.READER, example="author")
+                          example="P@$$w0rd123")
+
+    @field_validator("role")
+    def validate_role(cls, v):
+        allowed_roles = {UserRole.AUTHOR, UserRole.READER}
+
+        if v not in allowed_roles:
+            raise ValueError(f"Role '{v}' is not allowed for sign-up")
+        return v
+
+    @field_validator("password")
+    def validate_password(cls, v):
+        if not any(char.isupper() for char in v):
+            raise ValueError(
+                "Password must contain at least one uppercase letter")
+        if not any(char.islower() for char in v):
+            raise ValueError(
+                'Password must contain at least one lowercase letter')
+        if not any(char.isdigit() for char in v):
+            raise ValueError('Password must contain at least one digit')
+        if not any(char in "!@#$%^&*()-_=+[]{}|;:,.<>?/" for char in v):
+            raise ValueError(
+                'Password must contain at least one special character')
+        return v
+
+
+class UserCreateWithHash(UserCreate):
+    hashed_password: str = Field(...)
 
 
 class UserRead(UserBase):
