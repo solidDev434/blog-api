@@ -1,32 +1,69 @@
-.idea
-.ipynb_checkpoints
-.mypy_cache
-.vscode
-__pycache__
-.pytest_cache
-htmlcov
-dist
-site
-.coverage*
+# FastAPI Development .gitignore
+
+# FastAPI specific
+app.log
+.env
+.env.local
+.env.test
+
+# Async and concurrency
+*.asyncio
+async_test.db
+
+# Auto-generated documentation
+docs/build/
+openapi.json
+redoc-static.html
+
+# Virtual environment
+venv/
+.venv/
+ENV/
+env/
+.conda/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+test_*.db
+test_results/
 coverage.xml
-.netlify
-test.db
-log.txt
-Pipfile.lock
-env3.*
-env
-docs_build
-site_build
-.venv
-docs.zip
-archive.zip
+pytest.xml
 
-# vim temporary files
-*~
-.*.sw?
-.cache
+# Database
+*.db
+*.sqlite3
+test.sqlite3
 
-# macOS
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.vim/
+.emacs.d/
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+Thumbs.db
 
-.codspeed
+# Logs
+*.log
+app.log
+uvicorn.log
+debug.log
