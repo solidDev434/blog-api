@@ -1,13 +1,19 @@
 import jwt
 import time
+from sqlalchemy.ext.asyncio.session import AsyncSession
+from jwt.exceptions import PyJWTError, ExpiredSignatureError
+from typing import Annotated
+from fastapi import Depends, HTTPException, status
 from datetime import timedelta, datetime, timezone
 from pwdlib import PasswordHash
+from app.services.user_service import get_user_by_email
+from fastapi.security import (
+    OAuth2PasswordBearer
+)
 
 from .settings import settings
-
-
-password_hash = PasswordHash.recommended()
-algorithm = "HS256"
+from app.db.dependencies import get_db
+from app.models.user_model import User
 
 
 class TokenError(Exception):
@@ -21,6 +27,56 @@ class TokenExpiredError(TokenError):
 
 class TokenInvalidError(TokenError):
     pass
+
+
+password_hash = PasswordHash.recommended()
+algorithm = settings.JWT_ALGORITHM
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/account/login"
+)
+
+
+# Get Authenticated user
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+    )
+
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY,
+                             settings.JWT_ALGORITHM)
+        email = payload.get("email")
+        if email is None:
+            raise credentials_exception
+
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WW-Authenticate": "Bearer"},
+        )
+
+    except PyJWTError:
+        raise credentials_exception
+
+    user = get_user_by_email(db, email)
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+def require_role(required_role: str):
+    def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted"
+
+            )
+        return current_user
+    return role_checker
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
