@@ -1,3 +1,4 @@
+from logging import Logger
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.schemas.user_schema import (
@@ -28,6 +29,10 @@ from app.core.security import (
     create_access_token,
     create_refresh_token
 )
+from .email_service import send_verify_mail
+
+
+logger = Logger(__name__)
 
 
 async def verify_and_check_user_is_inactive(db: AsyncSession, email: str):
@@ -97,12 +102,15 @@ async def register_user(db: AsyncSession, payload: UserCreateWithoutHash):
 
     # Create email verification token
     token = create_temporary_token(data={"email": payload.email}, minutes=7)
-    print(f"Temporary Token {token}")
-    # Send mail
-    # https://domain.com/verify-email?token={token}
 
     # Create new user
-    return await create_user(db, new_user_payload)
+    user = await create_user(db, new_user_payload)
+
+    # Send verification mail
+    logger.info(f"Send verifcation mail to {payload.email}")
+    await send_verify_mail(payload.email, token)
+
+    return user
 
 
 async def login_user(db: AsyncSession, payload: LoginUser):
@@ -143,7 +151,7 @@ async def resend_mail(db: AsyncSession, payload: ResendVerificationMail):
     await verify_and_check_user_is_inactive(db, payload.email)
 
     token = create_temporary_token(data={"email": payload.email}, minutes=7)
-    print(token)
+    await send_verify_mail(payload.email, token)
 
 
 async def forgot_password(db: AsyncSession, payload: ForgotPassword):

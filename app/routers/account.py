@@ -19,6 +19,7 @@ from app.schemas.account_schema import (
     ResetPassword
 )
 from app.db.dependencies import get_db
+from app.services.email_service import send_verify_mail
 
 router = APIRouter(prefix="/account", tags=["Authentication"])
 logger = logging.getLogger(__name__)
