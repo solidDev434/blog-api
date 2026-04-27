@@ -1,8 +1,11 @@
 import logging
 from fastapi import FastAPI
-from app.routers.account import router as account_router
 from contextlib import asynccontextmanager
 from app.db.db import init_db
+
+# Routers
+from app.routers.account import router as account_router
+from app.routers.user import router as user_router
 
 logger = logging.getLogger(__name__)
 
@@ -25,3 +28,4 @@ app = FastAPI(
 
 # Register Routes
 app.include_router(account_router)
+app.include_router(user_router)

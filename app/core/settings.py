@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     JWT_REFRESH_KEY: str
+    JWT_ALGORITHM: str
 
     SERVER_URL: str
 

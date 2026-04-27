@@ -1,6 +1,6 @@
 import logging
 from fastapi import APIRouter, status, Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.schemas.user_schema import UserCreateWithoutHash
 from app.services.account_service import (
@@ -19,7 +19,6 @@ from app.schemas.account_schema import (
     ResetPassword
 )
 from app.db.dependencies import get_db
-from app.services.email_service import send_verify_mail
 
 router = APIRouter(prefix="/account", tags=["Authentication"])
 logger = logging.getLogger(__name__)
@@ -43,8 +42,10 @@ async def create_new_user(payload: UserCreateWithoutHash, db: AsyncSession = Dep
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
-async def create_new_user(payload: LoginUser, db: AsyncSession = Depends(get_db)):
+async def create_new_user(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     try:
+        payload = LoginUser(email=form_data.username,
+                            password=form_data.password)
         return await login_user(db, payload)
 
     except HTTPException as e:

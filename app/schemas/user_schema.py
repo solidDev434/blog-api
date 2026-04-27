@@ -54,9 +54,9 @@ class UserCreateWithHash(UserCreate):
     hashed_password: str = Field(...)
 
 
-class UserRead(UserBase):
+class UserResponse(BaseModel):
     id: int
+    username: str
+    email: str
     role: UserRole
     is_active: bool
-    created_at: datetime
-    updated_at: datetime | None = None
