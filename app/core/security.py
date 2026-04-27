@@ -6,14 +6,15 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from datetime import timedelta, datetime, timezone
 from pwdlib import PasswordHash
-from app.services.user_service import get_user_by_email
 from fastapi.security import (
     OAuth2PasswordBearer
 )
 
 from .settings import settings
+from app.services.user_service import get_user_by_email
 from app.db.dependencies import get_db
 from app.models.user_model import User
+from app.schemas.user_schema import UserResponse
 
 
 class TokenError(Exception):
@@ -60,11 +61,23 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: As
     except PyJWTError:
         raise credentials_exception
 
-    user = get_user_by_email(db, email)
+    user = await get_user_by_email(db, email)
     if user is None:
         raise credentials_exception
 
-    return user
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not verify credentials"
+        )
+
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        role=user.role,
+        is_active=user.is_active
+    )
 
 
 def require_role(required_role: str):
