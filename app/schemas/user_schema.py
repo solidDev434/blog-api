@@ -60,3 +60,8 @@ class UserResponse(BaseModel):
     email: str
     role: UserRole
     is_active: bool
+
+
+class CurrentUserResponse(BaseModel):
+    user: UserResponse
+    token: str

@@ -30,7 +30,7 @@ from app.core.security import (
     create_refresh_token
 )
 from .email_service import send_verify_mail
-
+from .cache_service import CacheService
 
 logger = Logger(__name__)
 
@@ -188,3 +188,13 @@ async def reset_password(db: AsyncSession, payload: ResetPassword):
 
     # Update user
     await update_user_password(db, user.id, hashed_password)
+
+
+async def logout_authenticated_user(token: str, cache: CacheService):
+    key = f"bl:{token}"
+    cached_token = await cache.get(key)
+    if cached_token:
+        return
+
+    # Blacklist token
+    await cache.set(key, token)
