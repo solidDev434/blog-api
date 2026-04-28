@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     MAIL_STARTTLS: bool
     MAIL_SSL_TLS: bool
 
+    REDIS_URL: str
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
