@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field
 from app.schemas.user_schema import UserRole
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 class User(SQLModel, table=True):
@@ -14,11 +14,14 @@ class User(SQLModel, table=True):
 
     role: UserRole = Field(default=UserRole.READER)
     is_active: bool = Field(default=False)
+    is_verified: bool = Field(default=False)
 
+    email_verified_at: datetime | None = Field(default=None, nullable=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now())
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now())
+    last_login_at: datetime | None = Field(default=None, nullable=True)
 
     def __repr__(self) -> str:
         return f"User(id={self.id}, email={self.email}, username={self.username})"
