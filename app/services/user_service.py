@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlmodel import select, or_, update
 from app.models.user_model import User
@@ -47,6 +48,17 @@ async def get_user_by_email_or_username(db: AsyncSession, email: str, username: 
     return result.scalar_one_or_none()
 
 
+async def verify_user(db: AsyncSession, user_id: int):
+    payload = {
+        "is_verified": True,
+        "is_active": True,
+        "email_verified_at": datetime.now()
+    }
+    statement = (update(User).where(User.id == user_id).values(**payload))
+    await db.execute(statement)
+    await db.commit()
+
+
 async def activate_user(db: AsyncSession, user_id: int):
     statement = (update(User).where(User.id == user_id).values(is_active=True))
     await db.execute(statement)
@@ -63,5 +75,12 @@ async def deactivate_user(db: AsyncSession, user_id: int):
 async def update_user_password(db: AsyncSession, user_id: int, new_hashed_password: str):
     statement = (update(User).where(
         User.id == user_id).values(hashed_password=new_hashed_password))
+    await db.execute(statement)
+    await db.commit()
+
+
+async def store_user_login_time(db: AsyncSession, user_id: int):
+    statement = (update(User).where(User.id == user_id).values(
+        last_login_at=datetime.now()))
     await db.execute(statement)
     await db.commit()

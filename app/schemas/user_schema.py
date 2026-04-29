@@ -1,5 +1,4 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
-from datetime import datetime
 from enum import Enum
 
 
