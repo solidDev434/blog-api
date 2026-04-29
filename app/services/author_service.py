@@ -100,3 +100,9 @@ async def get_profile(db: AsyncSession, author_id: int):
         )
 
     return profile
+
+
+async def list_authors(db: AsyncSession):
+    statement = select(AuthorProfile)
+    result = await db.execute(statement)
+    return result.scalars().fetchall() or []
