@@ -106,7 +106,6 @@ async def register_user(db: AsyncSession, payload: UserCreateWithoutHash):
         **payload.model_dump(exclude={"password"}),
         hashed_password=hashed_password,
     )
-    print("New Payload", new_user_payload)
 
     # Create email verification token
     token = create_temporary_token(data={"email": payload.email})
@@ -175,7 +174,6 @@ async def forgot_password(db: AsyncSession, payload: ForgotPassword):
         )
 
     token = create_temporary_token(data={"email": payload.email}, minutes=5)
-    print(f"Temporary Token {token}")
 
     return token
 
