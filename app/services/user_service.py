@@ -47,6 +47,13 @@ async def get_user_by_email_or_username(db: AsyncSession, email: str, username: 
     return result.scalar_one_or_none()
 
 
+async def get_user_by_id(db: AsyncSession, id: int):
+    statement = select(User).where(
+        or_(User.id == id))
+    result = await db.execute(statement)
+    return result.scalar_one_or_none()
+
+
 async def activate_user(db: AsyncSession, user_id: int):
     statement = (update(User).where(User.id == user_id).values(is_active=True))
     await db.execute(statement)

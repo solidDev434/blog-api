@@ -8,9 +8,9 @@ from sqlmodel import SQLModel
 
 from alembic import context
 
-# Models
-from app.models.user_model import User
-from app.models.author_profiles_model import AuthorProfile
+# # Models
+# from app.models.user_model import User
+# from app.models.author_model import AuthorProfile
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

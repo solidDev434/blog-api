@@ -1,9 +1,10 @@
 from sqlmodel import SQLModel, Field, Relationship
 from enum import Enum
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 
-from .author_profiles_model import AuthorProfile
+if TYPE_CHECKING:
+    from .author_model import AuthorProfile
 
 
 class UserRole(str, Enum):
@@ -31,7 +32,7 @@ class User(SQLModel, table=True):
 
     # Relationships
     author_profile: Optional["AuthorProfile"] = Relationship(
-        back_populates="user", cascade_delete=True)
+        back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
     def __repr__(self) -> str:
         return f"User(id={self.id}, email={self.email}, username={self.username})"

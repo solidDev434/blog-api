@@ -6,6 +6,7 @@ from app.core.redis import redis_client
 # Routers
 from app.routers.account import router as account_router
 from app.routers.user import router as user_router
+from app.routers.author import router as author_router
 
 # Middlewares
 from app.middlewares.log_request_time import log_request_time
@@ -38,6 +39,7 @@ async def health_check():
 # Register Routes
 app.include_router(account_router)
 app.include_router(user_router)
+app.include_router(author_router)
 
 # Middlewares
 app.middleware("http")(log_request_time)

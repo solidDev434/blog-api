@@ -1,9 +1,20 @@
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 
+if TYPE_CHECKING:
+    from app.models.user_model import User
 
-class AuthorProfile(SQLModel, table=True):
+
+class AuthorProfileBase(SQLModel):
+    pen_name: Optional[str] = Field(default=None, max_length=100)
+    website: Optional[str] = Field(default=None, max_length=500)
+    twitter_handle: Optional[str] = Field(default=None, max_length=50)
+    linkedin_url: Optional[str] = Field(default=None, max_length=500)
+    is_featured: bool = Field(default=False)
+
+
+class AuthorProfile(AuthorProfileBase, table=True):
     __tablename__ = "author_profiles"
     id: int | None = Field(default=None, unique=True, primary_key=True)
     user_id: int = Field(
@@ -11,19 +22,13 @@ class AuthorProfile(SQLModel, table=True):
         unique=True,
         ondelete="CASCADE"
     )
-
-    pen_name: Optional[str] = Field(default=None, max_length=100)
-    website: Optional[str] = Field(default=None, max_length=500)
-    twitter_handle: Optional[str] = Field(default=None, max_length=50)
-    linkedin_url: Optional[str] = Field(default=None, max_length=500)
     posts_count: int = Field(default=0)
-    is_featured: bool = Field(default=False)
 
     created_at: datetime = Field(default_factory=lambda: datetime.now())
     updated_at: datetime = Field(default_factory=lambda: datetime.now())
 
     # Relationships
-    user: Optional["AuthorProfile"] = Relationship(
+    user: Optional["User"] = Relationship(
         back_populates="author_profile")
 
     def __repr__(self) -> str:
