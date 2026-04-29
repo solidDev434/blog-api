@@ -10,6 +10,9 @@ app.log
 *.asyncio
 async_test.db
 
+# Alembic
+alembic.ini
+
 # Auto-generated documentation
 docs/build/
 openapi.json

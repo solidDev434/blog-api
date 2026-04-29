@@ -23,5 +23,9 @@ class User(SQLModel, table=True):
         default_factory=lambda: datetime.now())
     last_login_at: datetime | None = Field(default=None, nullable=True)
 
+    # Relationships
+    author_profile: Optional["AuthorProfile"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+
     def __repr__(self) -> str:
         return f"User(id={self.id}, email={self.email}, username={self.username})"

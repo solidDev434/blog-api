@@ -16,7 +16,8 @@ from app.db.dependencies import get_db
 from app.models.user_model import User
 from app.schemas.user_schema import (
     UserResponse,
-    CurrentUserResponse
+    CurrentUserResponse,
+    UserRole
 )
 from app.services.cache_service import CacheService
 from app.db.dependencies import get_cache
@@ -101,12 +102,12 @@ async def get_current_user(
     return CurrentUserResponse(user=user_data, token=token)
 
 
-def require_role(required_role: str):
+def require_role(required_role: UserRole):
     def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role != required_role:
+        if current_user.user.role != required_role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Operation not permitted"
+                detail=f"Role '{required_role}' is required to access this resource"
 
             )
         return current_user

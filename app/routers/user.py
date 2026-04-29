@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
-from app.core.security import (
-    get_current_user,
-    require_role
+
+from app.core.security import get_current_user
+from app.schemas.user_schema import (
+    UserResponse,
+    CurrentUserResponse
 )
-from app.schemas.user_schema import (UserResponse, CurrentUserResponse)
 
 router = APIRouter(
     prefix="/users", tags=["Users"])
