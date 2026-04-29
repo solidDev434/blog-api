@@ -1,12 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
-from datetime import datetime
-from enum import Enum
-
-
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    AUTHOR = "author"
-    READER = "reader"
+from app.models.user_model import UserRole
 
 
 class UserBase(BaseModel):

@@ -1,6 +1,12 @@
 from sqlmodel import SQLModel, Field
-from app.schemas.user_schema import UserRole
-from datetime import datetime, timezone
+from enum import Enum
+from datetime import datetime
+
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    AUTHOR = "author"
+    READER = "reader"
 
 
 class User(SQLModel, table=True):

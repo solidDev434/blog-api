@@ -1,7 +1,6 @@
 import logging
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.db.db import init_db
 from app.core.redis import redis_client
 
 # Routers
@@ -18,7 +17,6 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup code
     logger.info(msg="Server is starting")
-    await init_db()
     await redis_client.connect()
 
     yield
