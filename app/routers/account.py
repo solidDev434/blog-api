@@ -2,7 +2,8 @@ import logging
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from app.schemas.user_schema import UserCreateWithoutHash
+from app.schemas.user_schema import (
+    UserCreateWithoutHash, CurrentUserResponse)
 from app.services.account_service import (
     register_user,
     login_user,
@@ -10,6 +11,7 @@ from app.services.account_service import (
     resend_mail,
     forgot_password,
     reset_password,
+    logout_authenticated_user
 )
 from app.schemas.account_schema import (
     LoginUser,
@@ -18,7 +20,12 @@ from app.schemas.account_schema import (
     ForgotPassword,
     ResetPassword
 )
-from app.db.dependencies import get_db
+from app.db.dependencies import (
+    get_db,
+    get_cache
+)
+from app.core.security import get_current_user
+from app.services.cache_service import CacheService
 
 router = APIRouter(prefix="/account", tags=["Authentication"])
 logger = logging.getLogger(__name__)
@@ -123,6 +130,24 @@ async def reset_user_password(payload: ResetPassword, db: AsyncSession = Depends
     except Exception as e:
         logger.error(
             f"Failed Reset Password Request error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout_user(cache: CacheService = Depends(get_cache), res: CurrentUserResponse = Depends(get_current_user)):
+    try:
+        await logout_authenticated_user(res.token, cache)
+        return {"message": "Logged out user"}
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+        logger.error(
+            f"Failed to Logout user error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred"

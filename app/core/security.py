@@ -14,7 +14,12 @@ from .settings import settings
 from app.services.user_service import get_user_by_email
 from app.db.dependencies import get_db
 from app.models.user_model import User
-from app.schemas.user_schema import UserResponse
+from app.schemas.user_schema import (
+    UserResponse,
+    CurrentUserResponse
+)
+from app.services.cache_service import CacheService
+from app.db.dependencies import get_cache
 
 
 class TokenError(Exception):
@@ -38,7 +43,21 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 # Get Authenticated user
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)):
+
+
+async def get_current_user(
+        token: Annotated[str, Depends(oauth2_scheme)],
+        db: AsyncSession = Depends(get_db),
+        cache: CacheService = Depends(get_cache)
+) -> CurrentUserResponse:
+    # Check if token has been Blacklisted
+    cached_token = await cache.get(f"bl:{token}")
+    if cached_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token invalidated"
+        )
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -71,13 +90,15 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: As
             detail="Could not verify credentials"
         )
 
-    return UserResponse(
+    user_data = UserResponse(
         id=user.id,
         username=user.username,
         email=user.email,
         role=user.role,
         is_active=user.is_active
     )
+
+    return CurrentUserResponse(user=user_data, token=token)
 
 
 def require_role(required_role: str):
