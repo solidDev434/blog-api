@@ -18,8 +18,9 @@ from app.services.user_service import (
     get_user_by_email,
     get_user_by_username,
     get_user_by_email_or_username,
-    activate_user,
-    update_user_password
+    update_user_password,
+    verify_user,
+    store_user_login_time
 )
 from app.core.security import (
     verify_password,
@@ -62,6 +63,12 @@ async def verify_if_user_exists_and_is_active(db: AsyncSession, email: str):
             detail="Invalid credentail"
         )
 
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verify mail to have access"
+        )
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -101,7 +108,7 @@ async def register_user(db: AsyncSession, payload: UserCreateWithoutHash):
     )
 
     # Create email verification token
-    token = create_temporary_token(data={"email": payload.email}, minutes=7)
+    token = create_temporary_token(data={"email": payload.email})
 
     # Create new user
     user = await create_user(db, new_user_payload)
@@ -134,6 +141,9 @@ async def login_user(db: AsyncSession, payload: LoginUser):
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
+    # Store user login timestamp
+    await store_user_login_time(db, user.id)
+
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 
@@ -143,7 +153,7 @@ async def verify_user_mail(db: AsyncSession, payload: VerifyEmail):
     user = await verify_and_check_user_is_inactive(db, token_payload["email"])
 
     # Activate user account
-    await activate_user(db, user.id)
+    await verify_user(db, user.id)
 
 
 async def resend_mail(db: AsyncSession, payload: ResendVerificationMail):
@@ -164,7 +174,6 @@ async def forgot_password(db: AsyncSession, payload: ForgotPassword):
         )
 
     token = create_temporary_token(data={"email": payload.email}, minutes=5)
-    print(f"Temporary Token {token}")
 
     return token
 

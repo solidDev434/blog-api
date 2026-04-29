@@ -1,16 +1,6 @@
-from sqlmodel import SQLModel, Field, Relationship
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from sqlmodel import SQLModel, Field
+from app.schemas.user_schema import UserRole
 from datetime import datetime
-
-if TYPE_CHECKING:
-    from .author_model import AuthorProfile
-
-
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    AUTHOR = "author"
-    READER = "reader"
 
 
 class User(SQLModel, table=True):
@@ -24,11 +14,14 @@ class User(SQLModel, table=True):
 
     role: UserRole = Field(default=UserRole.READER)
     is_active: bool = Field(default=False)
+    is_verified: bool = Field(default=False)
 
+    email_verified_at: datetime | None = Field(default=None, nullable=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now())
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now())
+    last_login_at: datetime | None = Field(default=None, nullable=True)
 
     # Relationships
     author_profile: Optional["AuthorProfile"] = Relationship(
